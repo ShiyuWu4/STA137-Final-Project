@@ -1,0 +1,6 @@
+"0","#Try kernal smoothing for trend"
+"0","kernel.type <- ""gaussian"""
+"0","bandwidth <- dpill(time(Exports), Exports)"
+"0","smoothed_values <- ksmooth(x=time(Exports),y=Exports,kernel='normal',bandwidth = bandwidth,n.points = length(Exports))"
+"0",""
+"0","plot(Exports,col='red')"

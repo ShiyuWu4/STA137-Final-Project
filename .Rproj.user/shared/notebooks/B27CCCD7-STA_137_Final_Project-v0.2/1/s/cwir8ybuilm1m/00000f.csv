@@ -1,0 +1,2 @@
+"0","# Plot the Export as time series data"
+"0","ts.plot(Exports,main = ""Time series data"")"

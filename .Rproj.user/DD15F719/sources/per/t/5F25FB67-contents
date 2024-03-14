@@ -1,0 +1,376 @@
+---
+title: "Final Project"
+author: "Shiyu Wu"
+date: "(Date on which the report is written)"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: yes
+    number_section: yes
+    toc: true
+    toc_float:
+      collapsed: false
+    fig caption: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.pos = 'H')
+```
+
+------------------------------------------------------------------------
+
+Note:
+
+-   **Remove instructions in your submission.**
+
+------------------------------------------------------------------------
+
+```{r,include=FALSE}
+# Loading all libraries and data
+library(AER)
+library(dplyr)
+library(ggplot2)
+library(SuppDists)
+library(haven)
+library(naniar)
+STAR<-read_sav("STAR_Students.sav")
+```
+
+# Abstract
+
+[Not required in the initial analysis report.\
+]{style="color:red"}
+
+[A (very) short summary of the report. As an example, you can simply
+write one sentence for each section in the report.]{style="color:blue"}
+
+# Introduction
+
+[Not required in the initial analysis report.\
+]{style="color:red"}
+
+[In this section, state the questions of interest, motivation of this
+analysis, and potential impact of your results. You can simply rephrase
+the Project Description for minimal efforts. You can also cite published
+papers or credible articles on the Internet. For instance, you may find
+[this brief](https://eric.ed.gov/?id=ED540485) very relevant. More can
+be found by searching the key words "class size", "education",
+"performance." See, among
+others,[here](https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/in_text_citations_the_basics.html)
+for proper citation formats.]{style="color:blue"}
+
+# Background
+
+[Not required in the initial analysis report.\
+]{style="color:red"}
+
+[In this section, explain the source of data, target population,
+sampling mechanism, and variables in this data set. You can briefly
+review existing research or known results, which will help you in the
+analysis.]{style="color:blue"}
+
+[The brief](https://eric.ed.gov/?id=ED540485) mentions in previous
+section is also a good reference to read. You can find more by searching
+the key word "Project STAR" in, e.g., [Google
+scholar](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=Project+STAR&btnG=).
+</span>
+
+# Descriptive analysis
+
+## Variable Selection
+
+```{r,echo=FALSE,fig.width=10}
+# Select variables related to 1st student's math score
+STAR.1st<-STAR[,c("g1tmathss","g1classtype","g1schid","g1surban","g1tchid","g1trace","g1thighdegree","g1tcareer","g1tyears")]
+
+# Select variables to find the missing value pattern across 3 years 
+STAR.3yr<-STAR[,c("g1tmathss","g2tmathss","g3tmathss","g1classtype","g2classtype","g3classtype","g1surban","g2surban","g3surban")]
+
+# Visualize the missing data for each column
+vis_miss(STAR.3yr,cluster = TRUE)
+gg_miss_var(STAR.1st)
+```
+
+From the first graph, the black area represents the missing value for each observation for 3 years. The pattern on the graph of missing values for math score, class type, and school location data are all similar. This result suggests that the missing data are mainly caused by students quitting the STAR program in some years. In the second graph, we choose all the fields relevant to 1st grade class type and math score to see their missing value. In conclusions, all fields have about same amount, 4500 observations, missing values. This conclusion strongly support the assumption in the first graph. Thus, we want to delete the samples not participating STAR in 1st grade to see the difference.
+
+```{r,echo=FALSE}
+# delete the samples not participating STAR program in 1st grade
+STAR<-STAR[STAR$FLAGSG1==1,]
+
+# Update data
+STAR.1st<-STAR[,c("g1tmathss","g1classtype","g1schid","g1surban","g1tchid","g1trace","g1thighdegree","g1tcareer","g1tyears")]
+STAR.3yr<-STAR[,c("g1tmathss","g2tmathss","g3tmathss","g1classtype","g2classtype","g3classtype","g1surban","g2surban","g3surban")]
+
+# Visualize the missing data for each column
+vis_miss(STAR.3yr,cluster = TRUE)
+gg_miss_var(STAR.1st)
+
+```
+
+As a result, the missing values in the 1st grade dataset are eliminated extremely. Theoretically, this action is necessary since we aim to find the potential casual effect between the class type and the 1st grade student's math scaled score. Thus, if a student never joined the STAR study while he was in 1st grade, we should ignore and delete the data for this sample.
+
+```{r,include=FALSE}
+# Aggregate the data at the class level
+STAR.class.level<-STAR.1st %>%
+  group_by(g1classtype,g1schid,g1surban,g1tchid,g1trace,g1thighdegree,g1tcareer,g1tyears) %>%
+  summarise(g1tavgmath=mean(g1tmathss,na.rm = TRUE),
+            g1tmedmath=median(g1tmathss,na.rm = TRUE))
+
+# Factorize the categorical data
+STAR.class.level$g1classtype<-as.factor(STAR.class.level$g1classtype)
+STAR.class.level$g1schid<-as.factor(STAR.class.level$g1schid)
+STAR.class.level$g1surban<-as.factor(STAR.class.level$g1surban)
+STAR.class.level$g1tchid<-as.factor(STAR.class.level$g1tchid)
+STAR.class.level$g1trace<-as.factor(STAR.class.level$g1trace)
+STAR.class.level$g1thighdegree<-as.factor(STAR.class.level$g1thighdegree)
+STAR.class.level$g1tcareer<-as.factor(STAR.class.level$g1tcareer)
+
+# Provide the summary statistic
+summary(STAR.class.level)
+```
+
+Based on the Stable Unit Treatment Value Assumption, investigation on class-level average math scaled score is a better choice comparing to student-level grade's. This is because students as individual samples easily affect others, but a class hardly interfere another class even though in the same school.
+
+In this projects, here are the chosen variables relevant to 1st grader class:
+
+* g1classtype: Classroom type for the class, including small, regular, and regular+aide.
+
+* g1schid: The school id for the school that the class belongs to.
+
+* g1surban: The school's type, including inner-city, suburban, rural, and urban.
+
+* g1tchid: The teacher id for the teacher responsible to the class.
+
+* g1tgen: The teacher's gender.
+
+* g1trace: The teacher's race.
+
+* g1thighdegree: The teacher's highest degree.
+
+* gt1tcareerL: The teacher's career ladder level.
+
+* g1tyears: The teacher's experiencing years on teaching.
+
+* g1tavgmath: The student's average math scaled score for the class
+
+* g1tmedmath: The student's median math scaled score for the class
+
+From the summary statistics, in the STAR program 1st grade section, most teachers are Caucasians, apprentices, or bachelors. Among these teachers, there is a professional person who has 42 years teaching experience, and this sample may affect the analysis result. Also, majority of schools locates in rural areas. The distribution of class types, teachers, and school id are relatively uniform. The median for average and median math scaled score across all class are close to 532, and the mean for average and median math scaled score across all class are close to 531.
+
+
+## Descriptive Statistic and Visualization
+
+```{r,echo=FALSE,fig.height=8,fig.width=12,warning=FALSE}
+# Box-plot and violin plot for math grade v.s. class type
+ggplot(STAR.class.level,aes(x=g1classtype,y=g1tavgmath))+geom_boxplot()+
+  labs(x="",y="Average Math Grade")+
+  stat_summary(fun="mean")
+  
+
+ggplot(STAR.class.level,aes(x=g1classtype,y=g1tavgmath))+geom_violin()+
+  labs(x="",y="Average Math Grade")
+```
+
+In the box plot, the small class has the best performance since its mean, median, upper, and lower quantiles are the highest. Comparing between regular and aide classes, they have an approximately equal median, but the box of aide class is larger than regular. These results state that students in aide classes tend to be less stable than in regular.
+
+In the violin plot, the small and regular classes have a nearly symmetric shape, but the aide class has more portions at the bottom. Therefore, the majority of classes in the aide type have mean math scores smaller than the average, while regular and small classes have a close mean and median.
+
+In conclusion, class type shows a linear association with the class's average math score.
+
+***
+
+```{r,echo=FALSE,fig.height=8,fig.width=14}
+# Box-plot and violin plot for math grade v.s. school type
+ggplot(STAR.class.level,aes(x=g1schid,y=g1tavgmath))+geom_boxplot()+
+  labs(x="",y="Average Math Grade")
+ggplot(STAR.class.level,aes(x=g1schid,y=g1tavgmath))+geom_violin()+
+  labs(x="",y="Average Math Grade")
+```
+
+***
+
+As a factor to set up stratification layers, the effect between each school and math grade is also significant to be explored. However, from the plots above, it's hard to have some descriptive analysis. Therefore, involving the discussion for the school locations and average math scaled scores across all class is necessary. 
+
+```{r,echo=FALSE,fig.height=8,fig.width=12}
+# Box-plot and violin plot for math grade v.s. school type
+ggplot(STAR.class.level,aes(x=g1surban,y=g1tavgmath))+geom_boxplot()+
+  labs(x="",y="Average Math Grade")
+ggplot(STAR.class.level,aes(x=g1surban,y=g1tavgmath))+geom_violin()+
+  labs(x="",y="Average Math Grade")
+```
+
+Since there are too many schools, and their ids are randomly assigned, the project uses the field of school type to provide more direct plots and valuable information.
+
+From the box plot, the urban school has the best performance in average math grade per class, and the inner city has the worst. The box of rural schools is the smallest, so students here should have the most stable math grade.
+
+From the violin plot, the urban and inner-city schools tend to have more portions of classes having average math scores lower than the average, while the average math grades of classes in suburban and rural schools are symmetrically distributed. Also, the classes in rural schools have more classes earning average math grades per class close to the mean.
+
+In conclusion, school type shows a linear association with the class's average math score.
+
+# Inferential analysis
+
+[We can define a two-way ANOVA model as follows
+$Y_{ijk} = \mu_{..} + \alpha_{i} + \beta_{j} + \epsilon_{ijk}$, where
+the index $i$ represents the class type: small ($i=1$), regular ($i=2$),
+regular with aide ($i=3$), and the index $j$ represents the school
+indicator. You need to explain the rest of the parameters, state
+constraints on the parameters, and justify the choice of model (e.g.,
+why no interaction terms).\
+]{style="color:blue"}
+
+[State the assumptions on your proposed model.]{style="color:blue"}
+
+[Fit the model on the Project STAR data and report the fitted results
+with some attention on how/whether to report the estimated coefficients
+for school IDs.]{style="color:blue"}
+
+[State the hypotheses to test. Please be sure specify the significance
+level and interpret your test result. Explain any additional assumptions
+involved in this test.]{style="color:blue"}
+
+[For the secondary question of interest, one option is the Tukey's range
+test ( [link](https://en.wikipedia.org/wiki/Tukey%27s_range_test)). You
+can employ other testing procedure as well. Again, specify the
+significance level, interpret your test result, and explain any
+additional assumptions involved in this test.\
+]{style="color:blue"}
+
+## Two-Way ANOVA Model
+
+We can set up a Two-Way ANOVA Model as below:
+$$
+Y_{ijk}=\mu_{..}+\alpha_i+\beta_j+\epsilon_{ijk}
+$$
+
+* $i$ represents the level of the class type, where $i=1$ implies the small-size class, $i=2$ implies the regular, and $i=3$ implies the regular with aide.
+
+* $j$ represents the level of the school type. Since there are 72 schools in total, $j \in {1,...,72}$.
+
+* $Y_{ijk}$, the dependent variable in this model, is the average math scaled scores for $k$th teacher with $i$th class type in $j$th school.
+
+* $\mu_{..}$ is the overall average math scaled score across all class types and schools. $\mu_{..}=\frac{1}{3n_j}\sum_{i=1}^3\sum_{j=1}^{n_j}\mu_{ij}$
+
+* $\alpha_i$ represents the fixed effect of $i$th class type
+
+* $\beta_j$ represents the fixed effect of $j$th class type
+
+* $\epsilon_{ijk}$ represents the random error for $k$th teacher with $i$th class type in $j$th school.
+
+Assumptions:
+
+* $\epsilon_{ijk}\sim N(0,\sigma^2)$ where $\sigma^2$ is a constant. Each $\epsilon_{i,j,k}$ should be independent from each other.
+
+* To satisfy the requirement of randomized experiment, the observations, the average math scaled score, are independent across all groups.
+
+* The residuals should be normally distributed across for all groups
+
+* The variance of the average math scaled score across all groups should be normally distributed.
+
+
+
+We are only interested in the potential treatment effect between class type and math scaled score. Since school id is used to stratify class-level data and reduce the difference for the class in the different school, we discard the interaction term in our Two-Way ANOVA Model.
+
+```{r,echo=FALSE}
+# Fit the original and simplified Two-way ANOVA model
+anova.fit<-aov(g1tavgmath~g1classtype+g1schid,data = STAR.class.level)
+anova.fit2<-aov(g1tavgmath~g1classtype+g1surban,data = STAR.class.level)
+print(anova.fit2$coefficients)
+```
+
+Since there are too many schools, providing the summary statistic for the model regarding to school id cannot provide any descriptive results. Instead, the model with school location should provide a more direct view. By providing the coefficients of this simplified model, classes from the small classroom (with $\alpha_1=0$) have higher average math scaled grades compare to regular and regular+aide (with $\alpha_2=-12.82$ and $\alpha_3=-9.88323$). It is also noticeable that the classes from inner-city schools (With $\beta_1=0$) have relatively low average math scaled grades. In other hand, classes from suburban (With $\beta_2=24.34$), rural (With $\beta_3=28.98$), and urban (With $\beta_4=25.26$) areas have close mean math grades. Among them, rural classes tend to have the highest average math scaled score.
+
+## Hypothesis Testing
+
+```{r,echo=FALSE}
+summary(anova.fit)
+```
+
+$H_0$:$\alpha_i=0~\forall i$ \
+$H_a$:Not all $\alpha_i$'s are 0.
+
+We set the significance level $\alpha=0.05$. According to the summary table, by doing F-Test, $P(F^*>F)=3.52*10^{-9}$. Thus, the null hypothesis is rejected, and there is a significantly difference between various class types.
+
+$H_0$:$\beta_j=0~\forall j$ \
+$H_a$:Not all $\alpha_j$'s are 0.
+
+We use the same significance level $\alpha=0.05$. According to the summary table, by doing F-Test, $P(F^*>F)<2*10^{-16}$. Thus, the null hypothesis is rejected, and there is a significantly difference between various school locations.
+
+## Tukey's Range Test
+```{r,echo=FALSE,fig.width=10}
+sig.level<-0.05
+T.ci<-TukeyHSD(anova.fit,conf.level = 1-sig.level)
+par(mfrow=c(1,2))
+plot(T.ci, las=1 , col="red")
+par(mfrow=c(1,1))
+print(T.ci[["g1classtype"]]["3-1",])
+```
+
+
+# Sensitivity analysis
+
+-   [Examine the residual plot of the fitted model. You need to explain
+    your findings in these plots (e.g., whether assumptions are
+    plausible).]{style="color:blue"}
+
+-   <span style='color:blue'> You can find tests for some assumptions by
+    searching the key words "test" and the corresponding assumptions.
+
+-   <span style='color:blue'> For alternative methods, you can explore
+
+    -   other summary measures (say, median instead of mean)
+    -   or nonparametric approach and check if your answers to the
+        questions of interest change. </span>
+
+# Discussion
+
+[Not required in the initial analysis report.\
+]{style="color:red"}
+
+[Conclude your analysis in this section. You can touch on the following
+topics.]{style="color:blue"}
+
+-   A brief recap of this project.
+-   Findings in the inferential analysis interpreted in the context of
+    Project STAR.
+-   Suggestions for future research and/or policy making given your
+    findings.
+-   Caveats of the current analysis.
+
+# Code Appendix
+
+```{r getlabels, echo = FALSE}
+labs = knitr::all_labels()
+labs = labs[!labs %in% c("setup","getlabels","allcode")]
+```
+
+```{r allcode, ref.label = labs, eval = FALSE}
+```
+
+# Acknowledgement {.unnumbered}
+
+[By default, it is assumed that you have discussed this project with
+instructors. List any other people that you have discussed this project
+with.]{style="color:blue"}
+
+# Reference {.unnumbered}
+
+[List any references you cited in the report. See
+[here](https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/in_text_citations_the_basics.html)
+for the APA format, as an example:]{style="color:blue"}
+
+Imbens, G., & Rubin, D. (2015). Stratified Randomized Experiments. In
+Causal Inference for Statistics, Social, and Biomedical Sciences: An
+Introduction (pp. 187-218). Cambridge: Cambridge University Press.
+<doi:10.1017/CBO9781139025751.010>
+
+# Session info {.unnumbered}
+
+[Report information of your `R` session for
+reproducibility.]{style="color:blue"}
+
+```{r}
+sessionInfo()
+```

@@ -1,0 +1,4 @@
+"0","# Remove the Trend-cycle effect"
+"0","#Exports.noTrend<-Exports-T.t"
+"0","Exports.noTrend <- Exports - smoothed_values$y"
+"0","plot(Exports.noTrend)"

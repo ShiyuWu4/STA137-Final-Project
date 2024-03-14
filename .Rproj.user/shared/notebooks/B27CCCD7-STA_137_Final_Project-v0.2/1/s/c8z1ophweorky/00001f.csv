@@ -1,0 +1,129 @@
+"0","#use SARIMA to determent the performance, acf of residual all need to be in range, p-value needs to be greater than 0.1, QQ lines close to the line."
+"0","fit1<-sarima(Exports.noTrend, 2,0,1, no.constant=TRUE)"
+"1","initial  value 0.262957 
+"
+"1","iter   2 value -0.129810
+"
+"1","iter   3 value -0.161969
+"
+"1","iter   4 value -0.180723
+"
+"1","iter   5 value -0.181623
+"
+"1","iter   6 value -0.182230
+"
+"1","iter   7 value -0.183361
+"
+"1","iter   8 value -0.183842
+"
+"1","iter   9 value -0.183860
+"
+"1","iter  10 value -0.183875
+"
+"1","iter  11 value -0.183879
+"
+"1","iter  12 value -0.183886
+"
+"1","iter  13 value -0.183886
+"
+"1","iter  14 value -0.183887
+"
+"1","iter  14 value -0.183887
+"
+"1","iter  14 value -0.183887
+"
+"1","final  value -0.183887 
+"
+"1","converged
+"
+"1","initial  value -0.181011 
+"
+"1","iter   2 value -0.181049
+"
+"1","iter   3 value -0.181133
+"
+"1","iter   4 value -0.181178
+"
+"1","iter   5 value -0.181212
+"
+"1","iter   6 value -0.181214
+"
+"1","iter   7 value -0.181214
+"
+"1","iter   7 value -0.181214
+"
+"1","iter   7 value -0.181214
+"
+"1","final  value -0.181214 
+"
+"1","converged
+"
+"1","<><><><><><><><><><><><><><>"
+"1","
+"
+"1"," "
+"1","
+"
+"1","Coefficients:"
+"1"," "
+"1","
+"
+"1","   "
+"1"," Estimate"
+"1","     SE"
+"1"," t.value"
+"1"," p.value"
+"1","
+ar1"
+"1","  -0.5731"
+"1"," 0.2122"
+"1"," -2.7011"
+"1","  0.0092"
+"1","
+ar2"
+"1","  -0.4330"
+"1"," 0.1767"
+"1"," -2.4497"
+"1","  0.0175"
+"1","
+ma1"
+"1","  -0.5029"
+"1"," 0.2619"
+"1"," -1.9199"
+"1","  0.0601"
+"1","
+"
+"1","
+"
+"1","sigma^2 estimated as"
+"1"," "
+"1","0.6776243"
+"1"," "
+"1","on"
+"1"," "
+"1","55"
+"1"," "
+"1","degrees of freedom"
+"1"," "
+"1","
+"
+"1"," "
+"1","
+"
+"1","AIC ="
+"1"," "
+"1","2.61338"
+"1"," "
+"1"," AICc ="
+"1"," "
+"1","2.621042"
+"1"," "
+"1"," BIC ="
+"1"," "
+"1","2.755479"
+"1"," "
+"1","
+"
+"1"," "
+"1","
+"
