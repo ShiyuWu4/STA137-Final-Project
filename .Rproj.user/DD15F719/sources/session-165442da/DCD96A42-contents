@@ -1,0 +1,135 @@
+---
+title: "HW 5 STA137"
+author: "Shiyu Wu"
+date: "2024-03-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(astsa)
+data("cmort")
+```
+# 3.10 
+## a
+$x_t=\theta_t\omega_t+\theta_{t-1}\omega_{t-1}$
+```{r}
+# Fit the AR(2) model by using OLS method (linear regression)
+ar2<-ar.ols(cmort,order= 2,demean=FALSE, intercept=TRUE)
+ar2
+
+# Plot the ACF and PACF of time series data
+acf2(cmort,max.lag = 52)
+```
+
+***
+
+## b
+```{r,fig.width=10,fig.height=10}
+# Find the coefficients for m=1,2,3,4
+fore<-predict(ar2,n.ahead = 4)
+ts.plot(fore$pred,cmort)
+
+# 95% CI's upper and lower bound
+U<-fore$pred+1.96*fore$se
+L<-fore$pred-1.96*fore$se
+
+# Show the 95% CI when m=1,2,3,4
+print(paste("The confidence Interval for m=1 is [",L[1],",",U[1],"]"))
+print(paste("The confidence Interval for m=2 is [",L[2],",",U[2],"]"))
+print(paste("The confidence Interval for m=3 is [",L[3],",",U[3],"]"))
+print(paste("The confidence Interval for m=4 is [",L[4],",",U[4],"]"))
+
+# Perform this 4 CI on the plot
+lines(L,lty="dotted",col="blue")
+lines(fore$pred, type="p", col="red")
+lines(U,lty="dotted",col="blue")
+```
+
+***
+
+# 3.21
+```{r}
+# Empty sets to store MLE estimations for the 3 coefficients
+theta.mle<-numeric(10)
+phi.mle<-numeric(10)
+sigma2.mle<-numeric(10)
+
+# Generate 10 MLE estimations for the 3 coefficients
+for (i in 1:10){
+  arma11<-arima.sim(list(order=c(1,0,1),ma=0.5,ar=0.9),sd=1,n=200)
+  arma11.mle<-arima(arma11,order=c(1,0,1),method = "ML")
+  phi.mle[i]<-arma11.mle$coef[1]
+  theta.mle[i]<-arma11.mle$coef[2]
+  sigma2.mle[i]<-arma11.mle$sigma2
+}
+
+# Build a table and perform the result
+coef.mle<-data.frame(
+  theta.mle=theta.mle,
+  phi.mle=phi.mle,
+  sigma2.mle=sigma2.mle
+)
+coef.mle
+```
+From the table of coefficients' MLE estimations, $\hat\theta$'s are always around 0.9, $\hat\phi$'s are about 0.5, and $\hat\sigma^2$'s are close to 1.
+
+***
+
+# 3.22
+```{r}
+set.seed(43)
+
+# Generate the AR(1) data with phi=0.99
+ar1<-arima.sim(list(ar=0.99),rand.gen=rnorm,sd=1,n=50)
+
+# Yule Walker's Method
+ar1.yw<-ar.yw(ar1,order=1)
+ar1.yw$x.mean
+ar1.yw$ar
+sqrt((1-ar1.yw$ar^2)/50)
+```
+Thus, $\sqrt n (\hat\phi-0.8832718)\xrightarrow[]{d} N(0,0.06630699)$
+```{r}
+set.seed(43)
+n<-50
+nboot<-200
+phi<-ar1.yw$ar
+resids<-ar1.yw$resid[-1]
+x.star<-ar1
+phi.star.yw<-rep(NA,nboot)
+for (i in 1:nboot) {
+  resid.star = sample(resids, replace=TRUE) #innovation resampling
+  for (t in 1:(n-1)){ x.star[t+1] = phi*(x.star[t]) + resid.star[t] }
+  phi.star.yw[i] = ar.yw(x.star, order=1)$ar
+}
+summary(phi.star.yw)
+```
+```{r}
+set.seed(43)
+phi.yw = rep(NA,nboot)
+for (i in 1:nboot){
+  x = arima.sim(n=50,list(ar=.99),rand.gen=rnorm,n.start=50)
+  phi.yw[i] = ar.yw(x, order=1)$ar 
+}
+summary(phi.yw)
+```
+```{r}
+set.seed(43)
+culer = rgb(.5,.7,1,.5)
+hist(phi.star.yw, 15, main="", prob=TRUE, xlim=c(0.6,1), ylim=c(0,6),
+col=culer, xlab=expression(hat(phi))) #bootstrapped distribution from data
+
+lines(density(phi.yw, bw=.02), lwd=2) # true distribution of phi
+
+u = seq(.6, 1, by=.001) 
+lines(u, dnorm(u, mean=.88, sd=.066), lty=2, lwd=2) # normal approximation
+
+legend(.65, 14, legend=c('true distribution', 'bootstrap distribution',
+'normal approximation'), bty='n', lty=c(1,0,2), lwd=c(2,0,2),
+col=1, pch=c(NA,22,NA), pt.bg=c(NA,culer,NA), pt.cex=2.5)
+```
+It seems that the mean $\hat\phi$ in bootstrap method is less than the true mean and Yule Walker's Method's mean.

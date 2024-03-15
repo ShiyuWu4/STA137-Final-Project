@@ -150,7 +150,7 @@ acf2((diff(Exports.log)),max.lag= 30)
 
 For the ARIMA(q,d,p) model
 $$
-X_t'=\sum_{i=1}^p\alpha_pX_{t-p}'+\sum_{i=1}^q\theta_q\omega_{t-q}
+X_t'=\sum_{i=1}^p\alpha_pX_{t-p}'+\sum_{i=1}^q\theta_qw_{t-q}
 $$
 where $X_t'=(1-B)^dX_t$
 
@@ -159,10 +159,12 @@ where $X_t'=(1-B)^dX_t$
 # Auto select the best p,d,q combination for ARIMA(p,d,q)
 Exports.noTrend.auto <- auto.arima(Exports.noTrend)
 summary(Exports.noTrend.auto)
+
 ```
 
 
 ## Model Comparison
+
 Since we used a first-order difference, assume the model has a constant term which betters the performance.
 ```{r}
 # Use SARIMA to determent the performance, acf of residual all need to be in range, p-value needs to be greater than 0.1, QQ lines close to the line.
@@ -195,6 +197,19 @@ summary(fit3)
 MSE3<-sum(fit3$fit$residuals)/58
 print(paste(c("Training MSE:",MSE3)))
 ```
+
+# Forecast
+
+Since we choose ARIMA(2,0,1) as our final ARIMA model, our formula for it should be
+$$
+(1-\phi_1B-\phi_2B^2)x_t=(1+B)w_t
+$$
+Set the significance level $\alpha=0.05$, our forecast for the next 6 years are shown on the plot below
+
+```{r}
+sarima.for(Exports,n.ahead = 6,p=2,d=0,q=1)
+```
+Explain this forecast plot.
 
 # Discussion
 

@@ -1,0 +1,58 @@
+"0","# include=false will not performance our codes and results in the html file; echo=false will only show our outputs such as tables and plots"
+"0","# import libraries and data here"
+"0",""
+"0","library(ggplot2)"
+"2","Warning: 程辑包‘ggplot2’是用R版本4.3.2 来建造的"
+"0","library(dplyr)"
+"2","Warning: 程辑包‘dplyr’是用R版本4.3.2 来建造的"
+"2","
+载入程辑包：‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(naniar)"
+"2","Warning: 程辑包‘naniar’是用R版本4.3.3 来建造的"
+"0","library(astsa)"
+"2","Warning: 程辑包‘astsa’是用R版本4.3.2 来建造的"
+"0","library(forecast)"
+"2","Warning: 程辑包‘forecast’是用R版本4.3.3 来建造的"
+"2","Registered S3 method overwritten by 'quantmod':
+  method            from
+  as.zoo.data.frame zoo 
+"
+"2","
+载入程辑包：‘forecast’
+
+"
+"2","The following object is masked from ‘package:astsa’:
+
+    gas
+
+"
+"0","library(TTR)"
+"2","Warning: 程辑包‘TTR’是用R版本4.3.3 来建造的"
+"0","library(KernSmooth)"
+"2","KernSmooth 2.23 loaded
+Copyright M. P. Wand 1997-2009
+"
+"0","library(tseries)"
+"2","Warning: 程辑包‘tseries’是用R版本4.3.3 来建造的"
+"2","
+    ‘tseries’ version: 0.10-55
+
+    ‘tseries’ is a package for time series analysis and computational finance.
+
+    See ‘library(help=""tseries"")’ for details.
+
+"
+"0","load(""finalproject.Rdata"")"
+"0","Exports<-ts(finalPro_data$Exports,start = 1960)"
