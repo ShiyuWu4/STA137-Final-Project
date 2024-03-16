@@ -72,7 +72,8 @@ acf2(Exports,max.lag=30)
 
 ## ADF and KPSS Tests for Stationary
 
-To evaluate the stationarity of the dataset, we applied two distinct methods: the Augmented Dickey-Fuller (ADF) test and the Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test, both set at a significance level of 0.05. The ADF test deems a time series as stationary if the p-values are less than 0.05, whereas the KPSS test considers a time series stationary if the p-values exceed 0.05. Results from both tests led to the rejection of the hypothesis that the time series is stationary, confirming that the dataset is indeed non-stationary. Consequently, further measures are required to achieve stationarity for effective analysis and prediction purposes.
+To numerically evaluate the stationarity of the dataset, we applied two distinct methods: the Augmented Dickey-Fuller (ADF) test and the Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test, both set at a significance level of 0.05. The ADF test deems a time series as stationary if the p-values are less than 0.05, whereas the KPSS test considers a time series stationary if the p-values exceed 0.05. Results from both tests led to the rejection of the hypothesis that the time series is stationary, confirming that the dataset is indeed non-stationary.
+All our models are predicated on the foundation of stationary data, which imparts numerous characteristics and properties crucial for prediction. Consequently, transforming the data into a time-independent format is essential to harness these advantages effectively.
 
 ```{r}
 sig_value <- 0.05 #significant value of test
@@ -106,7 +107,7 @@ Exports.noTrend <- Exports - smoothed_values$y
 plot(Exports.noTrend,main='Export Data After Removing Trend')
 ```
 
-To delve deeper into the model exploration, calculations of the Autocorrelation Function (ACF) and Partial Autocorrelation Function (PACF) were conducted. The ACF revealed a very strong correlation at a lag of 1, while the PACF displayed two pronounced correlations at lags 1 and 2. These findings suggest the potential suitability of AR(2) and MA(1) models for the de-trended data.
+To delve deeper into the model exploration, calculations of the Autocorrelation Function (ACF) and Partial Autocorrelation Function (PACF) were conducted. ACF and PACF are instrumental in identifying the lags with significant impact on the current value. They play a crucial role in delineating the pattern of the time series, thereby aiding in the selection of an appropriate model. The ACF revealed a very strong correlation at a lag of 1, while the PACF displayed two pronounced correlations at lags 1 and 2. These findings suggest the potential suitability of AR(2) and MA(1) models for the de-trended data.
 ```{r}
 acf2(Exports.noTrend,max.lag= 30)
 
@@ -158,7 +159,6 @@ acf2((diff(Exports.log)),max.lag= 30)
 After thorough comparison and careful consideration, the decision was made to select the detrending method as the preferred approach for preparing our data for model fitting in the subsequent phase of analysis.
 
 ## ARIMA Model
-(Post the formula here by using LaTeX)
 
 For the ARIMA(q,d,p) model
 $$
@@ -178,7 +178,10 @@ summary(Exports.noTrend.auto)
 
 
 ## Model Comparison
+To discern the most effective model, Mean Squared Error (MSE) and Akaike Information Criterion (AIC) were employed as the primary metrics. MSE helps estimate the average of squared errors during model training, while AIC assesses both the prediction error and the extent of information loss during model fitting.
+The SARIMA model was utilized for evaluation, showing that the ACF of residuals mostly fell within the expected confidence range, with the Q-Q plot revealing a good alignment of most points along the fit line, albeit with some evidence of heavy tails. Comparisons were made between ARIMA(2,1,1) and ARIMA(3,0,1), against the backdrop of ARIMA(2,0,1). While ARIMA(2,1,1) exhibited a lower MSE of 0.0128 compared to ARIMA(3,0,1)'s MSE of 0.0735 and ARIMA(2,0,1)'s MSE of 0.00430, it was disqualified due to its p-values falling below the significance line for lags less than 5, indicating autocorrelation and dependency within white noise, rendering it suboptimal.
 
+Despite ARIMA(3,0,1) presenting a slightly better AIC of 2.544 against ARIMA(2,0,1)’s AIC of 2.613, the minimal difference and the preference for simplicity guided the choice towards ARIMA(2,0,1) for prediction purposes, with the specific equation provided in the following segment.
 ```{r}
 # Use SARIMA to determent the performance, acf of residual all need to be in range, p-value needs to be greater than 0.1, QQ lines close to the line.
 # ARIMA(2,0,1)
@@ -189,8 +192,6 @@ summary(fit1)
 MSE1<-sum(fit1$fit$residuals)/58
 print(paste(c("Training MSE:",MSE1)))
 ```
-Due to the Q-Q plot, the ARIMA Model is heavy-tailed slightly.
-
 ```{r}
 # ARIMA(2,1,1)
 fit2<-sarima(Exports.noTrend, 2,1,1, no.constant=TRUE)
@@ -212,8 +213,6 @@ print(paste(c("Training MSE:",MSE3)))
 ```
 
 
-# Diagnosis
-
 
 # Forecast
 
@@ -230,11 +229,12 @@ autoplot(forecast(arima(Exports.noTrend,c(2,0,1))))
 ```
 The forecast depicted focuses solely on the random white noise component of exports over the next six years, not the actual future exports. To accurately forecast total exports, a linear fit and prediction of the trend using a separate linear model would be necessary. However, this paper concentrates primarily on analyzing the random noise within the time series, not on predicting the trend.
 
-# Discussion
 
 
 ## Conclusion
+In this project, detrending the data was chosen as the necessary step to adhere to the stationary assumption and reduce errors, leading to the establishment of an ARIMA(2,0,1) model. However, the forecast process encounters a limitation due to its inability to predict future trends, offering only a 95% confidence interval for predictions that exclude any trend component. This constitutes a significant constraint of the study.
 
+Looking ahead, to address this limitation and enhance the project, an initial step could involve identifying suitable functions or distributions to estimate the trend, which would allow for more comprehensive confidence intervals that incorporate the trend. Additionally, the introduction of more data and the exploration of alternative modeling approaches, such as the Long Short-Term Memory (LSTM) model, could offer improved outcomes that include trend analysis, thus broadening the scope and applicability of the findings.
 \newpage
 
 # Reference 
