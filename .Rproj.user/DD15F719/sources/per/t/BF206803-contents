@@ -1,0 +1,201 @@
+---
+title: "STA 207: Assignment I"
+author: "Shiyu Wu ID:922838363"
+output: html_document
+---
+***
+
+**Instructions** You may adapt the code in the course materials or any sources (e.g., the Internet, classmates, friends). In fact, you can craft solutions for almost all questions from the course materials with minor modifications. However, you need to write up your own solutions and acknowledge all sources that you have cited in the Acknowledgement section. 
+
+Failing to acknowledge any non-original efforts will be counted as plagiarism. This incidence will be reported to the Student Judicial Affairs. 
+
+*** 
+
+
+A consulting firm is investigating the relationship between wages and occupation. The file `Wage.csv` contains three columns, which are 
+
+  - `wage`, the wage of the subject,
+  - `ethnicity`, the ethnicity of the subject,
+  - and `occupation`, the occupation of the subject. 
+  
+We will only use `wage` and `occupation` in this assignment. 
+
+
+```{r,echo=T,results=F,message=F}
+Wage=read.csv('Wage.csv');
+library(gplots)
+library(ggplot2)
+library(Rmisc)
+library(SuppDists)
+attach(Wage)
+```
+
+***
+
+(1) Write down a one-way ANOVA model for this data. For consistency, choose the letters from $\{Y,\alpha, \mu, \epsilon\}$ and use the factor-effect form.
+$Y_{i,j}=\mu+\alpha_i+\epsilon_{i,j}$ and $\alpha_i=\mu_i-\mu$
+Where $j=1,...,n_i$, and $i=1,...,6$
+$n_1=55,n_2=97.n_3=38,n_4=83,n_5=105,n_6=156, r=6$
+```{r}
+table(Wage$occupation)
+```
+***
+
+(2)  Write down the least squares estimator of $\alpha_i$ for all $i$. Find the expectation and variance of these estimators in terms of $\{n_i\}$ and the parameters of the model. 
+$\hat{\alpha_i}=\bar{Y}_i-\hat\mu$
+Since 
+$$
+E[\hat\mu]=E[\sum_{k=1}^rw_k\bar{Y}_{k\cdot}]=\sum_{k=1}^rw_kE[\bar{Y}_{k\cdot}]=\sum_{k=1}^rw_kE[\mu_k+\epsilon_k]=\sum_{k=1}^r w_k\mu_{k}=\mu
+$$
+$$
+E[\hat\alpha_i]=E[\bar{Y}_{i\cdot}-\hat\mu]=E[\frac{\sum_{j=1}^{n_i}{Y_{i,j}}}{n_i}-\hat\mu]\\
+=E[\frac{\sum_{j=1}^{n_i}{\alpha_i+\epsilon_{i,j}}}{n_i}+\frac{n_i\mu}{n_i}]-E[\hat\mu]\\
+=E[\frac{\sum_{j=1}^{n_i}{\alpha_i+\epsilon_{i,j}}}{n_i}]\\
+=E[\frac{n\alpha_i}{n}]+0=\alpha_i
+$$
+$$
+Var[\hat\alpha_i]=Var[\bar{Y}_{i\cdot}-\sum_{k=1}^rw_k\bar{Y}_{k\cdot}]\\
+=Var[\frac{\sum_{j=1}^{n_i}{\alpha_i+\epsilon_{i,j}+\mu}}{n_i}-\sum_{k=1}^rw_k\sum_{j=1}^{n_k}\frac{{\alpha_k+\epsilon_{k,j}+\mu}}{n_k}]\\
+=Var[\frac{\sum_{j=1}^{n_i}{\epsilon_{i,j}}}{n_i}-\sum_{k=1}^rw_k\sum_{j=1}^{n_k}\frac{{\epsilon_{k,j}}}{n_k}]\\
+=\frac{\sum_{j=1}^{n_i}Var[\epsilon_{i,j}]}{n_i^2}-\sum_{k=1}^rw_k^2\sum_{j=1}^{n_k}\frac{{Var[\epsilon_{k,j}}]}{n_k^2}\\
+=\frac{\sigma^2}{n_i}-\sum_{k=1}^r(\frac{n_k}{n_T})^2\frac{\sigma^2}{n_k}\\
+=\frac{\sigma^2}{n_i}-\sum_{k=1}^r\frac{n_k\sigma^2}{n_T^2}\\
+=\frac{\sigma^2}{n_i}-\frac{\sigma^2}{n_T}
+$$
+Where $n_T=\sum_{k=1}^rn_k$
+
+*** 
+
+(3) Obtain the main effects plots. Summarize your findings.
+```{r}
+wage.summary<-summarySE(Wage,measurevar="wage",groupvars="occupation")
+ggplot(wage.summary,aes(x=occupation,y=wage,group=1))+geom_errorbar(aes(ymin=wage-ci,ymax=wage+ci),width=.1)+geom_line(color="red")+geom_point()
+```
+
+*** 
+
+
+(4) Set up the ANOVA table using `R` for your model. Briefly explain this table.
+```{r}
+anova.fit<-aov(wage ~ occupation, data = Wage)
+summary(anova.fit)
+```
+The column of Df shows the degree of freedom for occupations and residuals. The Sum Sq and Mean Sq provides the Regression Sum/Mean Squared for the variable occupation and the Error Sum/Mean Squared for the model. F-value is calculated as MSR/MSE, and it provides the value for F-test of this model. Pr(>F) is known as P-value, and it shows the probability that the null hypothesis holds true.
+
+From the summary statistic, p-value is far less than 2e-16. It implies that not all $\alpha$'s are 0, and the variable "occupation" is influential to the wage.
+
+*** 
+
+
+(5) Test whether there is any association between `occupation` and `wage`. In particular, you need to (a) define the null and alternative hypotheses using the notation in Part 1, (b) conduct the test, and (c) explain your test result.
+a) $H_0:\alpha_1=\alpha_2=\alpha_3=\alpha_4=\alpha_5=\alpha_6~$
+$H_a:$ Not all $\alpha$'s are equal.
+b) The model is same as the one built in part 4, so the summary statistics remains same also.
+$Y_{ij}=\mu+\alpha_i+\epsilon_{ij}$ and $\alpha_i=\mu_i-\mu~$
+where $j=1,...,n_i$, and $i=1,...,6$
+c) From the summary statistics in part 4, our P-value is far less than 0.05, the significance level. Hence, the null hypothesis is rejected, and the occupation has a strong relation with the wage.
+
+*** 
+
+(6) For the model fitted in Part 4, carry out the necessary diagnostics to check if the model assumptions given in Part 1 are valid. What are your findings?
+```{r,fig.height=10,fig.width=10}
+par(mfrow=c(2,2))
+# Fitted value v.s. Residuals
+plot(anova.fit,which=1)
+# Q-Q plots
+qqnorm(anova.fit$residuals)
+qqline(anova.fit$residuals)
+# Scale-Location plot
+plot(anova.fit,which=3)
+```
+The approach to identify the independence assumption is unknown. From the fitted value v.s. residuals plot, the dots are unfairly distributed on the two sides of Y=0 (the dotted line), so the assumption of equal variance may not hold true. In the Q-Q plot, the line is right-skewed, so the assumption of normality is possibly violated. Last, the line in Scale-Location plot is not horizontal, so the assumption of equal variance is not true.
+```{r}
+vars<-tapply(Wage$wage,Wage$occupation,var) # Find sample variances for each occupation
+alpha<-0.05 # Significance level
+
+# Hartley test
+H.stat<-max(vars)/min(vars)
+ns<-as.numeric(table(Wage$occupation))
+H<-qmaxFratio(1-alpha,df=sum(ns)/length(ns),k=6)
+print(paste0(c(H.stat,H)))
+```
+Since $H^*>H(1-\alpha;n-1,r)$, the variances are unlikely equal.
+
+*** 
+	
+(7) Assuming that the assumptions you made are true, can you statistically conclude if there is one occupation where the mean wage is the highest? Use the most appropriate method (use $\alpha=0.05$) to support your statement.
+From the graph in part 1, management should be the most possible occupation that have the highest mean. If the mean wage of technical occupation is unlikely to be the highest, the remaining occupations excluding management are more unlikely to have the highest mean salary. Thus, if we prove that $s=\mu_{management}-\mu_{technical}>0$ is highly likely, there is occupation with the highest mean salary.
+$$
+H_0:s>0 \\
+H_a:s\leq0 \\
+$$
+Set the significance level $\alpha=0.05 \\$
+```{r}
+# Set a 95% confidence interval for the hypothesis test by applying Tukey-Kramer method
+alpha<-0.05
+ci<-TukeyHSD(anova.fit,conf.level = 1-alpha)
+print(ci[["occupation"]]["technical-management",])
+```
+The 95% of confidence interval is (-1.4690436,2.9821865). Since 0 is in the confidence interval, the null hypothesis is rejected, and we cannot conclude an occupation where the mean is the highest.
+
+*** 
+
+
+(8) Consider a one-way ANOVA model with fixed effects 
+\begin{equation}\label{eqn:anova}
+Y_{i,j}=\mu + \alpha_i+ \epsilon_{i,j}, \ j=1,\ldots, n_i, i =1,\ldots, r,
+\end{equation}
+where $\{ \alpha_i\}$ satisfies that $\sum_{i} n_i \alpha_i=0$ and $\{\epsilon_{i,j}\}$ are i.i.d. $N(0,\sigma^2)$.  For the above model, write down the loss function associated with least squares, denoted as $L_1(\mu,\alpha)$, and write down the log-likelihood, denoted as $L_2(\mu,\alpha)$.
+$$
+L_1(\mu,\alpha)=\sum_{i=1}^r\sum_{j=1}^{n_i}(Y_{i,j}-(\mu + \alpha_i))^2
+$$
+where $\sum_{i=1}^r n_i \alpha_i=0$
+Since the error term and Y are normally distributed in the assumption,
+$$
+L_2(\mu,\alpha)=ln(L(\mu,\alpha|Y))\\
+=ln(\prod_{i=1}^r\prod_{j=1}^{n_i}\frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(Y_{i,j}-\alpha_i-\mu)^2}{2\sigma^2}})\\
+=-\frac{1}{2}\sum_{i=1}^r\sum_{j=1}^{n_i}ln(2\pi\sigma^2)-\sum_{i=1}^r\sum_{j=1}^{n_i}\frac{(Y_{i,j}-\alpha_i-\mu)^2}{2\sigma^2}\\
+=-\frac{n_T}{2}ln(2\pi\sigma^2)-\sum_{i=1}^r\sum_{j=1}^{n_i}\frac{(Y_{i,j}-\alpha_i-\mu)^2}{2\sigma^2}
+$$
+where $\sum_{i=1}^r n_i \alpha_i=0$
+
+***
+
+(9) Find the maximum likelihood estimator of $\mu$ and $\alpha$ using the log-likelihood $L_2(\mu,\alpha)$ in Question 8. 
+$$
+\frac{\partial}{\partial\mu}L_2(\mu,\alpha)=\sum_{i=1}^r\sum_{j=1}^{n_i}\frac{Y_{i,j}-\alpha_i-\mu}{\sigma^2}\\
+=\frac{1}{\sigma^2}(\sum_{i=1}^r\sum_{j=1}^{n_i}Y_{i,j}-\sum_{i=1}^rn_i\alpha_i-n_T\mu)\\
+=\frac{1}{\sigma^2}(\sum_{i=1}^r\sum_{j=1}^{n_i}(Y_{i,j})-n_T\mu)
+$$
+when $\frac{\partial}{\partial\mu}L_2(\mu,\alpha)=0$
+$$
+\hat\mu=\frac{1}{n_T}(\sum_{i=1}^r\sum_{j=1}^{n_i}Y_{i,j})\\
+=\bar Y
+$$
+$$
+\frac{\partial}{\partial\alpha_i}L_2(\mu,\alpha)=\sum_{j=1}^{n_i}\frac{Y_{i,j}-\alpha_i-\mu}{\sigma^2}\\
+=\frac{1}{\sigma^2}(\sum_{j=1}^{n_i}Y_{i,j}-n_i\alpha_i-n_i\mu)
+$$
+When $\frac{\partial}{\partial\alpha_i}L_2(\mu,\alpha)=0$,
+$$
+n_i\hat\alpha_i=\sum_{j=1}^{n_i}Y_{i,j}-n_i\hat\mu\\
+\hat\alpha_i=\bar Y_i-\hat\mu\\
+=\bar Y_i-\bar Y
+$$
+$$
+\frac{\partial^2}{\partial\mu^2}L_2(\mu,\alpha)|_{\mu=\bar Y}=-\frac{n_T}{\sigma^2}<0
+$$
+$$
+\frac{\partial^2}{\partial\alpha^2}L_2(\mu,\alpha)|_{\alpha=\bar Y_i-\bar Y}=-\frac{n_i}{\sigma^2}<0
+$$
+Thus, $\hat\mu=\bar Y$ and $\hat\alpha_i=\bar Y_i-\bar Y$ are the maximum likelihood estimators $\forall i$.
+
+## Acknowledgement {-}
+Having Group Discussion with: Zichun Hu [zichu@ucdavis.edu]; Mingqian Zhang [pazhang@ucdavis.edu]; Jingzhi Sun [edsun@ucdavis.edu] ;Zhengqian Cui [zhqcui@ucdavis.edu].
+
+Using the STA 207 lecture notes and videos via Canvas(https://nbviewer.org/github/ChenShizhe/StatDataScience/blob/master/Notes/Chapter4ANOVA.ipynb)
+
+## Session information {-}
+```{r}
+sessionInfo()
+```

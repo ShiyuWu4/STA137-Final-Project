@@ -1,24 +1,24 @@
 {
-    "id": "DCD96A42",
-    "path": "C:/Users/Shiyu Wu/Desktop/UCD/STA137/HW 5 STA137.Rmd",
+    "id": "BF206803",
+    "path": "C:/Users/Shiyu Wu/Desktop/UCD/STA 207/Assignment1.Rmd",
     "project_path": null,
     "type": "r_markdown",
-    "hash": "0",
+    "hash": "154862859",
     "contents": "",
     "dirty": false,
-    "created": 1710459280200.0,
+    "created": 1710475145045.0,
     "source_on_save": false,
-    "relative_order": 4,
+    "relative_order": 6,
     "properties": {
         "source_window_id": "",
         "Source": "Source"
     },
     "folds": "",
-    "lastKnownWriteTime": 1709892491,
+    "lastKnownWriteTime": 1706871553,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1709892491,
+    "last_content_update": 1706871553,
     "read_only": false,
     "read_only_alternatives": []
 }

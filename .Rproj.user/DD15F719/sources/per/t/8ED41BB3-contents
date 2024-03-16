@@ -1,0 +1,495 @@
+---
+title: "Initial Analysis Report"
+author: "Shiyu Wu"
+date: "Feb 16th, 2024"
+output:
+  html_document:
+    df_print: paged
+    number_sections: yes
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.pos = 'H')
+```
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+library(AER)
+library(dplyr)
+library(ggplot2)
+library(SuppDists)
+data("STAR")
+```
+
+</details>
+
+</p>
+
+------------------------------------------------------------------------
+
+# Descriptive analysis
+
+## Data exploration and aggregation
+
+From the background section, the main goal is to explore how academic
+performance is affected by class type in 1st grade. To simplify the
+model and eliminate the effect on the individual since they are likely
+to be affected by massive unknown factors, analyzing the aggregated data
+per class should be a good strategy. Thus, identifying different classes
+and providing them with a unique id is necessary. To do so, there is a
+new column called "teacherid" defined as the combination of the
+teacher's experience, ethnicity, school id, and class type in 1st grade.
+
+The 1st-grade student's math grade is a good measurement to examine
+academic performance. In addition, since there are too many school ids,
+including school-type fields may provide a better view while plotting.
+
+As a result, the relevant fields are "math1", "experience1",
+"tethnicity1", "school1", "schoolid1", and "star1".
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r,warning=FALSE}
+# Select all samples relevant to 1st grade
+STAR<-STAR[!is.na(STAR$star1),]
+
+# Select all fields relevant to 1st grade students' math grades
+STAR<-STAR[,c("math1","experience1","tethnicity1","school1","schoolid1","star1")]
+STAR$tethnicity1<-as.factor(STAR$tethnicity1)
+STAR$schoolid1<-as.factor(STAR$schoolid1)
+STAR$star1<-as.factor(STAR$star1)
+STAR$school1<-as.factor(STAR$school1)
+
+# Create a new field called "teacherid" for different classes
+STAR$teacherid<-paste(STAR$experience1,STAR$tethnicity1,STAR$schoolid1,STAR$star1)
+STAR$teacherid<-as.factor(STAR$teacherid)
+
+# Provide basic information for each field with teacher as one unit
+STAR.class.level<-STAR %>%
+  group_by(experience1,tethnicity1,schoolid1,school1,star1,teacherid) %>%
+  summarise(math.mean=mean(math1,na.rm = TRUE),
+            math.median=median(math1,na.rm = TRUE))
+summary(STAR.class.level)
+
+# Provide statistic for their math grades based with teacher as one unit
+print(STAR.class.level)
+```
+
+</details>
+
+</p>
+
+From the summary statistics, the majority of teachers are Caucasians.
+Most schools come from rural areas, and the school with id 51 provides
+the most data. The numbers of class types are approximately equal, so
+the star1 data is nearly balanced. It is also noticeable that the mean
+and median of the experience years are 11.74 and 11, but the maximum of
+it reaches 42 years. This data point is a potential outlier if the
+project focuses on researching the relation with experience years for
+each teacher. The mean of students' average and median math grades per
+class are around 530.
+
+In the new aggregated data, there are still many missing values. To
+avoid the effect of them, in this project, these missing values will be
+omitted.
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+# Remove the samples with missing value
+STAR.class.level<-STAR.class.level[!is.na(STAR.class.level$math.mean),]
+STAR.class.level<-STAR.class.level[!is.na(STAR.class.level$star1),]
+STAR.class.level<-STAR.class.level[!is.na(STAR.class.level$schoolid1),]
+```
+
+</details>
+
+</p>
+
+## Average Math Score versus Class Type
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r,fig.height=8,fig.width=12}
+# Box-plot and violin plot for math grade v.s. class type
+ggplot(STAR.class.level,aes(x=star1,y=math.mean))+geom_boxplot()+
+  labs(x="",y="Average Math Grade")+
+  stat_summary(fun="mean")
+  
+ggplot(STAR.class.level,aes(x=star1,y=math.mean))+geom_violin()+
+  labs(x="",y="Average Math Grade")
+```
+
+</details>
+
+</p>
+
+In the box plot, the small class has the best performance since its
+mean, median, upper, and lower quantiles are the highest. Comparing
+between regular and aide classes, they have an approximately equal
+median, but the box of aide class is larger than regular. These results
+state that students in aide classes tend to be less stable than in
+regular.
+
+In the violin plot, the small and regular classes have a nearly
+symmetric shape, but the aide class has more portions at the bottom.
+Therefore, the majority of classes in the aide type have mean math
+scores smaller than the average, while regular and small classes have a
+close mean and median.
+
+In conclusion, class type shows a linear association with the class's
+average math score.
+
+## Average Math Score versus school Type
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r,fig.height=8,fig.width=12}
+# Box-plot and violin plot for math grade v.s. school type
+ggplot(STAR.class.level,aes(x=school1,y=math.mean))+geom_boxplot()+
+  labs(x="",y="Mean Math Grade")
+
+ggplot(STAR.class.level,aes(x=school1,y=math.mean))+geom_violin()+
+  labs(x="",y="Average Math Grade")
+```
+
+</details>
+
+</p>
+
+Since there are too many schools, and their ids are randomly assigned,
+the project uses the field of school type to provide more direct plots
+and valuable information.
+
+From the box plot, the urban school has the best performance in average
+math grade per class, and the inner city has the worst. The box of rural
+schools is the smallest, so students here should have the most stable
+math grade.
+
+From the violin plot, the urban and inner-city schools tend to have more
+portions of classes having average math scores lower than the average,
+while the average math grades of classes in suburban and rural schools
+are symmetrically distributed. Also, the classes in rural schools have
+more classes earning average math grades per class close to the mean.
+
+In conclusion, school type shows a linear association with the class's
+average math score.
+
+# Inferential analysis
+
+## Two-Way Anova Model
+
+We can define a two-way ANOVA model as follows $$
+Y_{ijk} = \mu_{..} + \alpha_{i} + \beta_{j} + \epsilon_{ijk}
+$$ , where the index $i={1,2,3}$ represents the class type: small
+($i=1$), regular ($i=2$), regular with aide ($i=3$), and the index
+$j={1,...,80}$ represents the school indicator. In the model,
+$\mu_{..}=\frac{1}{240}\sum_{i=1}^3\sum_{j=1}^{80}\mu_{ij}$, $\alpha_i$
+represents the coefficient for the ith type of class, and the $\beta_j$
+is the coefficient of jth school. The constraints are
+$\sum_{i=1}^3\alpha_i=0$ and $\sum_{i=1}^{80}\beta_j$. In this model, we
+assumed that the observations are independent and normally distributed
+with approximately equal variance. The reason that we choose to discard
+the interaction term is that the school id is the control variable.
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+anova.fit<-aov(math.mean~star1+schoolid1,data = STAR.class.level)
+anova.fit2<-aov(math.mean~star1+school1,data = STAR.class.level)
+print(anova.fit2$coefficients)
+```
+
+</details>
+
+</p>
+
+Since there are too many schools and school ids cannot provide direct
+information to our analysis. Thus, the school type is applied in the
+model temporarily. From the result above, small classes tend to have a
+higher average math grade. Classes in rural and urban schools tend to
+have a better performance on the average math grade per class.
+
+## Hypothesis Test
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+summary(anova.fit)
+```
+
+</details>
+
+</p>
+
+1.  $H_0$:$\alpha_i=0~\forall i$ $H_a$:Not all $\alpha_i$'s are 0.
+
+2.  $H_0$:$\beta_j=0~\forall j$ $H_a$:Not all $\beta_j$'s are 0
+
+The significance level is 0.05. From the summary statistic of the
+two-way ANOVA model, the p-values for different class types are all
+smaller than 0.05. Thus, those 2 null hypotheses are rejected, and
+different class types and schools influence the average math grade per
+class.
+
+## Tukey's Range Test
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r,fig.width=10}
+sig.level<-0.05
+T.ci<-TukeyHSD(anova.fit,conf.level = 1-sig.level)
+par(mfrow=c(1,2))
+plot(T.ci, las=1 , col="red")
+par(mfrow=c(1,1))
+print(T.ci[["star1"]]["regular+aide-small",])
+```
+
+</details>
+
+</p>
+
+The significance level is 0.05. The secondary question is whether the
+highest average math grade exists among different classes. To figure
+this question out, if the difference between the top 2 types of class is
+larger than 0 at $\alpha=0.05$, this result should be certain at
+$(1-\alpha)$%. Thus, after defining $s=\mu_{small}-\mu_{regular+aide}$,
+and we have a hypothesis test: $$
+H_0:s>0 \\
+H_a:s<=0
+$$ Since the 95% confidence interval does not contain 0, the null
+hypothesis is kept, and the average math grade for a small class is the
+highest with 95% certainty.
+
+# Sensitivity analysis
+
+## Model Diagnostic
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+par(mfrow=c(1,2))
+plot(anova.fit,which = 1)
+qqnorm(residuals(anova.fit))
+qqline(residuals(anova.fit),col = "red")
+```
+
+</details>
+
+</p>
+
+Since the dots are dotted approximately uniformly distributed at the 2
+sides of y=0, the assumption of equal variance should hold true. In the
+Q-Q plot, the line is heavy-tailed, so the normality assumption is
+violated.
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+vars<-tapply(STAR.class.level$math.mean,STAR.class.level$star1,var) # Find sample variances for each occupation
+alpha<-0.05 # Significance level
+
+# Hartley test
+H.stat<-max(vars)/min(vars)
+ns<-as.numeric(table(STAR.class.level$star1))
+H<-qmaxFratio(1-alpha,df=sum(ns)/length(ns),k=3)
+print(paste0(c(H.stat,H)))
+```
+
+</details>
+
+</p>
+
+By doing Hartley's Test, since $H^*<H(1-\alpha;n-1,r)$, the variances
+are likely to equal among different classes.
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+# Shapiro-Wilk test for normality
+shapiro.test(anova.fit$residuals)
+```
+
+</details>
+
+</p>
+
+Since the p-value or Shapiro-Wilk normality test is smaller than 0.05,
+the significance level. The null hypothesis that the residuals are
+normally distributed is rejected.
+
+## Median Aggregatiion Method
+
+Since the normality assumption is violated while using mean to
+aggregate, we want to try median as the new aggregation method to keep
+the normality.
+
+### Two-Way Anova Model
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+anova.fit<-aov(math.median~star1+schoolid1,data = STAR.class.level)
+anova.fit2<-aov(math.median~star1+school1,data = STAR.class.level)
+print(anova.fit2$coefficients)
+```
+
+</details>
+
+</p>
+
+Similar to the mean method, since there are too many schools and school
+ids cannot provide direct information to our analysis. Thus, the school
+type is applied in the model temporarily. From the result above, small
+classes tend to have a higher median math grade. Classes in rural and
+urban schools tend to have a better performance on the median math grade
+per class.
+
+### Hypothesis Test
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+summary(anova.fit)
+```
+
+</details>
+
+</p>
+
+1.  $H_0$:$\alpha_i=0~\forall i$ $H_a$:Not all $\alpha_i$'s are 0.
+
+2.  $H_0$:$\beta_j=0~\forall j$ $H_a$:Not all $\beta_j$'s are 0
+
+The significance level is 0.05. From the summary statistic of the
+two-way ANOVA model, the p-values for different class types are all
+smaller than 0.05. Thus, those 2 null hypotheses are rejected, and
+different class types and schools influence the median math grade per
+class.
+
+### Model Diagnostic
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+par(mfrow=c(1,2))
+plot(anova.fit,which = 1)
+qqnorm(residuals(anova.fit))
+qqline(residuals(anova.fit),col = "red")
+```
+
+</details>
+
+</p>
+
+Since the dots are dotted approximately uniformly distributed at the 2
+sides of y=0, the assumption of equal variance should hold. In the Q-Q
+plot, the line is heavy-tailed, so the normality assumption may be
+violated.
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+vars<-tapply(STAR.class.level$math.median,STAR.class.level$star1,var) # Find sample variances for each occupation
+alpha<-0.05 # Significance level
+
+# Hartley test
+H.stat<-max(vars)/min(vars)
+ns<-as.numeric(table(STAR.class.level$star1))
+H<-qmaxFratio(1-alpha,df=sum(ns)/length(ns),k=3)
+print(paste0(c(H.stat,H)))
+```
+
+</details>
+
+</p>
+
+By doing Hartley's Test, since $H^*<H(1-\alpha;n-1,r)$, the variances
+are likely to equal among different classes.
+
+<details>
+
+<summary>**Click to expand/collapse the code**</summary>
+
+```{r}
+# Shapiro-Wilk test for normality
+shapiro.test(anova.fit$residuals)
+```
+
+</details>
+
+</p>
+
+Since the p-value or Shapiro-Wilk normality test is smaller than 0.05,
+the significance level. The null hypothesis that the residuals are
+normally distributed is rejected.
+
+In conclusion, replacing mean with median math grade per class seems to
+provide little help in solving the normality problem.
+
+# Acknowledgement {.unnumbered}
+
+<span style='color:blue'> Having Group Discussion with: Zichun Hu
+[[zichu\@ucdavis.edu](mailto:zichu@ucdavis.edu){.email}]; Mingqian Zhang
+[[pazhang\@ucdavis.edu](mailto:pazhang@ucdavis.edu){.email}]; Jingzhi
+Sun [[edsun\@ucdavis.edu](mailto:edsun@ucdavis.edu){.email}] ;Zhengqian
+Cui [[zhqcui\@ucdavis.edu](mailto:zhqcui@ucdavis.edu){.email}].
+
+Using the STA 207 lecture notes and videos via
+Canvas(<https://nbviewer.org/github/ChenShizhe/StatDataScience/blob/master/Notes/Chapter4ANOVAII.ipynb>)
+
+Using grammarly.com for grammar check </span>
+
+# Reference {.unnumbered}
+
+[List any references you cited in the report. See
+[here](https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/in_text_citations_the_basics.html)
+for the APA format, as an example:]{style="color:blue"}
+
+Imbens, G., & Rubin, D. (2015). Stratified Randomized Experiments. In
+Causal Inference for Statistics, Social, and Biomedical Sciences: An
+Introduction (pp. 187-218). Cambridge: Cambridge University Press.
+<doi:10.1017/CBO9781139025751.010>
+
+# Session info {.unnumbered}
+
+[Report information of your `R` session for
+reproducibility.]{style="color:blue"}
+
+```{r}
+sessionInfo()
+```
